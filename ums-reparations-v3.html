@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UMS — Gestion Réparations</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<!-- ══════════════════════════════════════════════════════════
+     FIREBASE — décommentez et remplissez pour mode multi-user
+     ══════════════════════════════════════════════════════════ -->
+<script type="module">
+/*
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey:"YOUR_KEY", authDomain:"YOUR.firebaseapp.com",
+  projectId:"YOUR_ID", storageBucket:"YOUR.appspot.com",
+  messagingSenderId:"YOUR_MSG_ID", appId:"YOUR_APP_ID"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+window.__DB = db;
+window.__FS = { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy };
+*/
+</script>
+
+<style>
+/* ═══════════════════════════════════════
+   VARIABLES & THEMES
+═══════════════════════════════════════ */
+:root {
+  --bg:#0b0f18; --bg2:#131929; --bg3:#1a2235; --bg4:#212d42;
+  --border:#2a3a55; --border2:#1e2d45;
+  --text:#e8edf5; --text2:#7a8fb0; --text3:#3d5070;
+  --accent:#f07030; --accent2:#3d9cf0;
+  --green:#30c070; --red:#f04050; --yellow:#f0b830; --purple:#9060f0; --teal:#20c0a0;
+  --card:#131929;
+  --sw:250px; --sw-c:64px;
+  --r:10px; --tr:.18s ease;
+  --font-h:'Bebas Neue',sans-serif;
+  --font:'Sora',sans-serif;
+  --font-m:'JetBrains Mono',monospace;
+  --sh:0 4px 24px rgba(0,0,0,.5);
+}
+.th-steel  { --bg:#060a12;--bg2:#0d1422;--bg3:#111c30;--bg4:#162040;--border:#1e3260;--text:#e0eaff;--text2:#5878b0;--accent:#38c8f8;--accent2:#9060f0;--green:#30d880;--red:#f03060;--yellow:#f0b020;--card:#0d1422; }
+.th-desert { --bg:#120c04;--bg2:#1c1208;--bg3:#261808;--bg4:#301e0c;--border:#50360c;--text:#f5e8c0;--text2:#907040;--accent:#f0a020;--accent2:#e05020;--green:#80b030;--red:#e03020;--yellow:#f0c830;--card:#1c1208; }
+.th-arctic { --bg:#e8eef8;--bg2:#f5f8ff;--bg3:#dde6f5;--bg4:#ccd8ee;--border:#b0c4e0;--text:#0a1830;--text2:#4060a0;--accent:#0060d0;--accent2:#7030c0;--green:#008840;--red:#cc1020;--yellow:#a07000;--card:#f5f8ff; }
+.th-jungle { --bg:#060e08;--bg2:#0c1810;--bg3:#102018;--bg4:#142818;--border:#1e4024;--text:#c8f0d0;--text2:#508858;--accent:#40d060;--accent2:#20c0a0;--green:#80f080;--red:#f04040;--yellow:#d0c020;--card:#0c1810; }
+.th-crimson{ --bg:#100608;--bg2:#1a0c0e;--bg3:#221014;--bg4:#2c1418;--border:#481820;--text:#f8dce0;--text2:#904858;--accent:#f03050;--accent2:#f07030;--green:#40c060;--red:#ff6070;--yellow:#f0c040;--card:#1a0d0d; }
+.th-slate  { --bg:#0a0c10;--bg2:#14161e;--bg3:#1c1f2c;--bg4:#22263a;--border:#2e3448;--text:#d8dff0;--text2:#6070a0;--accent:#8090f0;--accent2:#50c8d0;--green:#40d880;--red:#f05060;--yellow:#f0c050;--card:#14161e; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;transition:background var(--tr),color var(--tr)}
+
+/* ── LAYOUT ── */
+#app{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+#sidebar{width:var(--sw);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:width var(--tr),transform var(--tr);z-index:50;overflow:hidden;position:relative}
+#sidebar.col{width:var(--sw-c)}
+.sb-hd{padding:16px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;overflow:hidden;white-space:nowrap}
+.sb-logo{font-family:var(--font-h);font-size:26px;color:var(--accent);letter-spacing:3px;flex-shrink:0}
+.sb-sub{font-size:10px;color:var(--text2);line-height:1.4}
+.sb-tog{position:absolute;top:14px;right:8px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:5px;transition:var(--tr);z-index:1}
+.sb-tog:hover{color:var(--accent);background:var(--bg3)}
+#sidebar.col .sb-sub,#sidebar.col .sb-logo+div{display:none}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0}
+.nav-group{padding:6px 14px 3px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+#sidebar.col .nav-group{display:none}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;color:var(--text2);border-left:3px solid transparent;transition:var(--tr);white-space:nowrap;overflow:hidden;position:relative;border-radius:0 6px 6px 0;margin-right:6px}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{color:var(--accent);background:var(--bg3);border-left-color:var(--accent)}
+.nav-ic{font-size:16px;flex-shrink:0;width:20px;text-align:center}
+.nav-lbl{font-size:12px;font-weight:500;flex:1}
+.nav-badge{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:var(--font-m)}
+#sidebar.col .nav-lbl,#sidebar.col .nav-badge,#sidebar.col .nav-group{display:none}
+#sidebar.col .nav-item{justify-content:center;padding:9px 0;margin-right:0}
+.sb-bot{padding:10px 14px;border-top:1px solid var(--border)}
+.sb-ver{font-size:10px;color:var(--text3);text-align:center;font-family:var(--font-m)}
+#sidebar.col .sb-ver{display:none}
+
+/* ── MAIN ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#topbar{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
+.tb-title{font-family:var(--font-h);font-size:20px;color:var(--text);letter-spacing:1px}
+.tb-badge{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:var(--font-m)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.mob-btn{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px}
+#content{flex:1;overflow-y:auto;padding:16px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card-title{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* ── KPI ── */
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;border-left:3px solid var(--accent);transition:border-color var(--tr)}
+.kpi-lbl{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-weight:700}
+.kpi-val{font-family:var(--font-h);font-size:38px;color:var(--text);line-height:1}
+.kpi-sub{font-size:10px;color:var(--text2);margin-top:2px}
+.kb{border-left-color:var(--accent2)}.kg{border-left-color:var(--green)}.kr{border-left-color:var(--red)}.ky{border-left-color:var(--yellow)}.kp{border-left-color:var(--purple)}.kt{border-left-color:var(--teal)}
+
+/* ── BUTTONS ── */
+.btn{padding:7px 14px;border:none;border-radius:8px;font-family:var(--font);font-size:13px;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:var(--tr);white-space:nowrap}
+.bp{background:var(--accent);color:#fff}.bp:hover{filter:brightness(1.15)}
+.bg{background:var(--bg3);color:var(--text);border:1px solid var(--border)}.bg:hover{border-color:var(--accent);color:var(--accent)}
+.bd{background:var(--red);color:#fff}.bd:hover{filter:brightness(1.1)}
+.bi{background:var(--accent2);color:#fff}.bi:hover{filter:brightness(1.1)}
+.bs{padding:5px 9px;font-size:11px}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.inp{padding:7px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;transition:border-color var(--tr)}
+.inp:focus{outline:none;border-color:var(--accent)}
+.inp-sel{cursor:pointer}
+
+/* ── TABLE ── */
+.tbl-w{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:750px}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;padding:9px 11px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg3);position:sticky;top:0;z-index:2}
+td{padding:8px 11px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle;transition:background .1s}
+tr:hover td{background:var(--bg4)}
+tr:last-child td{border-bottom:none}
+.cm{font-family:var(--font-m);font-weight:700}
+.csm{font-size:11px;font-family:var(--font-m)}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid transparent}
+
+/* ── QUICK STATUS SELECT ── */
+.qs-wrap{position:relative;display:inline-block}
+.qs-sel{padding:3px 22px 3px 8px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid transparent;cursor:pointer;font-family:var(--font);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px}
+.qs-sel:focus{outline:none}
+
+/* ── CHARTS ── */
+.bar-chart{display:flex;flex-direction:column;gap:6px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-lbl{width:90px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;flex-shrink:0}
+.bar-track{flex:1;height:18px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:5px;font-size:9px;color:#fff;font-weight:700;transition:width .6s ease}
+.bar-cnt{width:24px;text-align:right;color:var(--text);font-family:var(--font-m);font-size:10px;font-weight:600}
+
+/* ── DONUT ── */
+.donut-w{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.donut-cw{position:relative;flex-shrink:0}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.donut-num{font-family:var(--font-h);font-size:30px;color:var(--text);line-height:1}
+.donut-lbl{font-size:9px;color:var(--text2)}
+.leg-w{display:flex;flex-wrap:wrap;gap:6px}
+.leg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2)}
+.leg-d{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* ── ACTIVITY ── */
+.act-list{display:flex;flex-direction:column;gap:5px}
+.act-item{display:flex;gap:8px;padding:7px;background:var(--bg3);border-radius:7px;align-items:flex-start}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.act-txt{font-size:11px;color:var(--text);line-height:1.4}
+.act-time{font-size:10px;color:var(--text2);margin-top:2px}
+
+/* ── MODAL ── */
+.ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:14px}
+.ovl.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:min(720px,100%);max-height:92vh;overflow-y:auto;box-shadow:0 16px 70px rgba(0,0,0,.6);animation:fadeUp .2s ease}
+.modal-sm{width:min(360px,100%)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.mhd{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:3}
+.mtitle{font-family:var(--font-h);font-size:20px;color:var(--accent);letter-spacing:1.5px}
+.mbody{padding:18px 20px}
+.mft{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border);position:sticky;bottom:0;background:var(--bg2)}
+.xbtn{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:2px 7px;border-radius:6px;transition:var(--tr)}
+.xbtn:hover{color:var(--red);background:var(--bg3)}
+
+/* ── FORM ── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg.full{grid-column:1/-1}
+.flbl{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px}
+.finp{padding:8px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;width:100%;transition:border-color var(--tr)}
+.finp:focus{outline:none;border-color:var(--accent)}
+.finp:disabled{opacity:.5;cursor:not-allowed}
+textarea.finp{resize:vertical;min-height:78px;line-height:1.6}
+.fnr{font-family:var(--font-h);font-size:30px;color:var(--accent);text-align:center;padding:9px;background:var(--bg3);border-radius:8px;border:1px dashed var(--border);margin-bottom:14px;letter-spacing:3px}
+
+/* ── VIEW FICHE ── */
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vf{padding:9px 11px;background:var(--bg3);border-radius:7px;border:1px solid var(--border)}
+.vf-lbl{font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.vf-val{font-size:12px;color:var(--text);font-weight:500}
+.vtxt{background:var(--bg3);border-radius:7px;border:1px solid var(--border);padding:10px}
+.vtxt-lbl{font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.vtxt-c{font-size:12px;color:var(--text);line-height:1.7;white-space:pre-wrap}
+.lock-banner{display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(240,184,48,.1);border:1px solid rgba(240,184,48,.4);border-radius:7px;margin-bottom:12px;font-size:12px;color:var(--yellow)}
+
+/* ── SETTINGS ── */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.sc h3{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.tag-w{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px;min-height:26px}
+.tag{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--text)}
+.tag-x{color:var(--text2);cursor:pointer;font-size:10px;transition:var(--tr);padding:0 2px}
+.tag-x:hover{color:var(--red)}
+.add-row{display:flex;gap:6px}
+.add-row .finp{flex:1;padding:6px 9px;font-size:11px}
+.st-list{display:flex;flex-direction:column;gap:5px;margin-bottom:9px}
+.st-row{display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:7px}
+.cdot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.12)}
+.sname{flex:1;font-size:12px}
+input[type=color]{width:28px;height:28px;border:none;background:none;cursor:pointer;border-radius:50%;padding:0;flex-shrink:0}
+.th-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.th-btn{padding:9px 5px;border-radius:8px;border:2px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:11px;text-align:center;transition:var(--tr);font-family:var(--font)}
+.th-btn.active,.th-btn:hover{border-color:var(--accent);color:var(--accent)}
+.pwd-info{font-size:11px;color:var(--text2);margin-bottom:9px;padding:7px;background:var(--bg3);border-radius:6px;border-left:3px solid var(--yellow)}
+
+/* ── MOBILE ── */
+#sb-ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;backdrop-filter:blur(2px)}
+@media(max-width:900px){
+  #sidebar{position:fixed;top:0;left:0;height:100%;transform:translateX(-100%);width:var(--sw)!important;z-index:50}
+  #sidebar.mob-open{transform:translateX(0)}
+  #sidebar.col{transform:translateX(-100%)}
+  #sb-ovl.open{display:block}
+  .mob-btn{display:flex}
+  .g3{grid-template-columns:1fr 1fr}
+  .g4{grid-template-columns:1fr 1fr}
+  .sg{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  #content{padding:10px}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .fgrid,.vgrid{grid-template-columns:1fr}
+  .toolbar{gap:5px}
+  .tb-title{font-size:17px}
+  .btn{padding:6px 11px;font-size:12px}
+}
+
+/* ── MISC ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text2)}
+.no-data{text-align:center;color:var(--text2);padding:28px;font-size:12px}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:.25}}
+.flash{animation:flash .45s 3}
+@keyframes slideOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(30px)}}
+.slide-out{animation:slideOut .35s ease forwards}
+</style>
+</head>
+<body>
+<div id="sb-ovl" onclick="closeMob()"></div>
+<div id="app">
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<div id="sidebar">
+  <div class="sb-hd">
+    <div class="sb-logo">UMS</div>
+    <div><div style="font-size:11px;font-weight:600;color:var(--text)">Réparations</div><div class="sb-sub">Gestion Camions</div></div>
+  </div>
+  <button class="sb-tog" onclick="toggleSB()" title="Réduire">◀</button>
+  <nav class="sb-nav" id="sbNav">
+    <div class="nav-group">Principal</div>
+    <div class="nav-item active" data-page="dashboard" onclick="nav('dashboard',this)">
+      <span class="nav-ic">📊</span><span class="nav-lbl">Tableau de Bord</span>
+    </div>
+    <div class="nav-item" data-page="register" onclick="nav('register',this)">
+      <span class="nav-ic">📋</span><span class="nav-lbl">Registre Complet</span>
+      <span class="nav-badge" id="nb-register">0</span>
+    </div>
+    <div class="nav-group">Par Statut</div>
+    <div class="nav-item" data-page="s-en-cours" onclick="nav('s-en-cours',this)">
+      <span class="nav-ic">⚙️</span><span class="nav-lbl">En Cours</span>
+      <span class="nav-badge" id="nb-en-cours" style="background:var(--accent2)">0</span>
+    </div>
+    <div class="nav-item" data-page="s-att-travail" onclick="nav('s-att-travail',this)">
+      <span class="nav-ic">🔧</span><span class="nav-lbl">En Att. de Travail</span>
+      <span class="nav-badge" id="nb-att-travail" style="background:var(--yellow)">0</span>
+    </div>
+    <div class="nav-item" data-page="s-att-arrivee" onclick="nav('s-att-arrivee',this)">
+      <span class="nav-ic">🚛</span><span class="nav-lbl">En Att. d'Arrivée</span>
+      <span class="nav-badge" id="nb-att-arrivee" style="background:var(--purple)">0</span>
+    </div>
+    <div class="nav-item" data-page="s-att-pieces" onclick="nav('s-att-pieces',this)">
+      <span class="nav-ic">📦</span><span class="nav-lbl">En Att. de Pièces</span>
+      <span class="nav-badge" id="nb-att-pieces" style="background:var(--teal)">0</span>
+    </div>
+    <div class="nav-item" data-page="s-annule" onclick="nav('s-annule',this)">
+      <span class="nav-ic">❌</span><span class="nav-lbl">Annulé</span>
+      <span class="nav-badge" id="nb-annule" style="background:var(--red)">0</span>
+    </div>
+    <div class="nav-item" data-page="s-hors-parc" onclick="nav('s-hors-parc',this)">
+      <span class="nav-ic">🚫</span><span class="nav-lbl">Mis Hors Parc</span>
+      <span class="nav-badge" id="nb-hors-parc" style="background:var(--text2)">0</span>
+    </div>
+    <div class="nav-group">Système</div>
+    <div class="nav-item" data-page="settings" onclick="nav('settings',this)">
+      <span class="nav-ic">⚙️</span><span class="nav-lbl">Paramètres</span>
+    </div>
+  </nav>
+  <div class="sb-bot"><div class="sb-ver">v3.0 — UMS Réparations</div></div>
+</div>
+
+<!-- ═══════ MAIN ═══════ -->
+<div id="main">
+  <div id="topbar">
+    <button class="mob-btn" onclick="openMob()">☰</button>
+    <div class="tb-title" id="tbTitle">Tableau de Bord</div>
+    <div class="tb-right">
+      <span id="syncStatus" style="font-size:10px;color:var(--text2)">💾 Local</span>
+    </div>
+  </div>
+  <div id="content"></div>
+</div>
+</div>
+
+<!-- ═══════ MODAL FICHE (édition) ═══════ -->
+<div class="ovl" id="ficheOvl">
+  <div class="modal">
+    <div class="mhd">
+      <div class="mtitle" id="mTitle">NOUVELLE FICHE</div>
+      <button class="xbtn" onclick="closeFicheM()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fnr" id="fnrBox">FR-0001</div>
+      <div class="fgrid">
+        <div class="fg"><label class="flbl">Date de Début *</label><input type="date" class="finp" id="fDate"></div>
+        <div class="fg">
+          <label class="flbl">Nr Parc * <span style="font-size:9px;color:var(--text2)">(chiffres ou "Non")</span></label>
+          <input type="text" class="finp" id="fParc" placeholder="ex: 042 ou Non" oninput="valParc(this)">
+          <span id="fParcErr" style="font-size:10px;color:var(--red);display:none">Chiffres ou le mot "Non" uniquement.</span>
+        </div>
+        <div class="fg"><label class="flbl">Nr Remorque <span style="font-size:9px;color:var(--text2)">(opt.)</span></label><input type="text" class="finp" id="fRem" placeholder="ex: REM-018"></div>
+        <div class="fg"><label class="flbl">Nr Ordre de Travail *</label><input type="text" class="finp" id="fOT" placeholder="ex: OT-2024-001"></div>
+        <div class="fg"><label class="flbl">Motif d'Entrée *</label><select class="finp" id="fMotif"></select></div>
+        <div class="fg"><label class="flbl">Type de Panne *</label><select class="finp" id="fType"></select></div>
+        <div class="fg"><label class="flbl">Équipe d'Intervention *</label><select class="finp" id="fEquipe"></select></div>
+        <div class="fg"><label class="flbl">Statut *</label><select class="finp" id="fStatut" onchange="colorStat(this)"></select></div>
+        <div class="fg full"><label class="flbl">Diagnostique</label><textarea class="finp" id="fDiag" placeholder="Résultat du diagnostic technique..." rows="3"></textarea></div>
+        <div class="fg full"><label class="flbl">Intervention</label><textarea class="finp" id="fInter" placeholder="Description des travaux effectués..." rows="3"></textarea></div>
+      </div>
+    </div>
+    <div class="mft">
+      <button class="btn bg" onclick="closeFicheM()">Annuler</button>
+      <button class="btn bp" onclick="saveFiche()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL VIEW ═══════ -->
+<div class="ovl" id="viewOvl">
+  <div class="modal">
+    <div class="mhd">
+      <div class="mtitle" id="vTitle">FICHE FR-0000</div>
+      <button class="xbtn" onclick="closeViewM()">✕</button>
+    </div>
+    <div class="mbody" id="vBody"></div>
+    <div class="mft" id="vFt"></div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL PASSWORD ═══════ -->
+<div class="ovl" id="pwdOvl">
+  <div class="modal modal-sm">
+    <div class="mhd"><div class="mtitle">🔒 ACCÈS PROTÉGÉ</div><button class="xbtn" onclick="closePwdM()">✕</button></div>
+    <div class="mbody">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Fiche verrouillée — statut <b id="lockLbl" style="color:var(--accent)"></b>.<br>Saisissez le mot de passe pour continuer.</p>
+      <div class="fg"><label class="flbl">Mot de Passe</label>
+        <input type="password" class="finp" id="unlockPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmUnlock()">
+      </div>
+      <div id="unlockErr" style="font-size:11px;color:var(--red);margin-top:7px;display:none"></div>
+    </div>
+    <div class="mft">
+      <button class="btn bg" onclick="closePwdM()">Annuler</button>
+      <button class="btn bp" onclick="confirmUnlock()">Déverrouiller</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════╗
+// ║  CONSTANTS & STATE                                       ║
+// ╚══════════════════════════════════════════════════════════╝
+const SKEY = 'ums_v4';
+const BC   = ['#f07030','#3d9cf0','#30c070','#f0b830','#f04050','#9060f0','#20c0a0','#ec4899','#84cc16','#f97316'];
+
+// STATUS → page mapping (auto-tabs)
+const STATUS_PAGES = {
+  'En Cours':               's-en-cours',
+  'En Attente de Travail':  's-att-travail',
+  'En Attente d\'Arrivée':  's-att-arrivee',
+  'En Attente de Pièces':   's-att-pieces',
+  'Annulé':                 's-annule',
+  'Mis Hors Parc':          's-hors-parc',
+};
+
+const PAGE_META = {
+  'dashboard':     {title:'Tableau de Bord',     icon:'📊'},
+  'register':      {title:'Registre Complet',     icon:'📋'},
+  's-en-cours':    {title:'En Cours',             icon:'⚙️', statut:'En Cours'},
+  's-att-travail': {title:'En Attente de Travail',icon:'🔧', statut:'En Attente de Travail'},
+  's-att-arrivee': {title:'En Attente d\'Arrivée',icon:'🚛', statut:'En Attente d\'Arrivée'},
+  's-att-pieces':  {title:'En Attente de Pièces', icon:'📦', statut:'En Attente de Pièces'},
+  's-annule':      {title:'Annulé',               icon:'❌', statut:'Annulé'},
+  's-hors-parc':   {title:'Mis Hors Parc',        icon:'🚫', statut:'Mis Hors Parc'},
+  'settings':      {title:'Paramètres',            icon:'⚙️'},
+};
+
+const NB_MAP = {
+  'register':'nb-register','s-en-cours':'nb-en-cours','s-att-travail':'nb-att-travail',
+  's-att-arrivee':'nb-att-arrivee','s-att-pieces':'nb-att-pieces',
+  's-annule':'nb-annule','s-hors-parc':'nb-hors-parc',
+};
+
+function defState(){
+  return {
+    fiches:[], nextId:1,
+    statuts:[
+      {name:'En Cours',               color:'#3d9cf0'},
+      {name:'En Attente de Travail',  color:'#f0b830'},
+      {name:'En Attente d\'Arrivée',  color:'#9060f0'},
+      {name:'En Attente de Pièces',   color:'#20c0a0'},
+      {name:'Annulé',                 color:'#f04050'},
+      {name:'Mis Hors Parc',          color:'#7a8fb0'},
+      {name:'Terminé',                color:'#30c070'},
+    ],
+    types:['Mécanique','Électrique','Hydraulique','Pneumatique','Carrosserie','Transmission','Refroidissement','Autre'],
+    motifs:['Panne Route','Maintenance Préventive','Inspection Technique','Réparation Planifiée','Accident','Défaillance Moteur','Contrôle Périodique'],
+    equipes:['Équipe A','Équipe B','Équipe C','Équipe Nuit','Sous-traitant'],
+    theme:'', lockStatut:'Terminé', password:'admin123',
+  };
+}
+
+let ST = (() => { try { const r=localStorage.getItem(SKEY); return r?JSON.parse(r):defState(); } catch{return defState();} })();
+let curPage = 'dashboard';
+let editId  = null;
+let unlockCB= null;
+let clickTm = null;
+let regSearch='', regF={statut:'',type:'',equipe:''};
+let tabSearch={}, tabF={};
+
+const today  = ()=> new Date().toISOString().split('T')[0];
+const fmtId  = id=> `FR-${String(id).padStart(4,'0')}`;
+const persist= ()=> localStorage.setItem(SKEY, JSON.stringify(ST));
+const cntBy  = (arr,k)=> arr.reduce((a,f)=>{a[f[k]]=(a[f[k]]||0)+1;return a;},{});
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  FIREBASE                                                ║
+// ╚══════════════════════════════════════════════════════════╝
+function initFB(){
+  if(!window.__DB||!window.__FS) return;
+  const {collection,onSnapshot,query,orderBy}=window.__FS;
+  document.getElementById('syncStatus').textContent='🔴 Connexion…';
+  const q=query(collection(window.__DB,'fiches'),orderBy('id','desc'));
+  onSnapshot(q,snap=>{
+    ST.fiches=snap.docs.map(d=>({...d.data(),_fbId:d.id}));
+    persist(); refreshPage(); updateBadges();
+    document.getElementById('syncStatus').textContent='🟢 Firebase sync';
+  });
+}
+async function fbSave(f){
+  if(!window.__DB||!window.__FS) return;
+  const{collection,addDoc,updateDoc,doc}=window.__FS;
+  if(f._fbId){ await updateDoc(doc(window.__DB,'fiches',f._fbId),f); }
+  else { const r=await addDoc(collection(window.__DB,'fiches'),f); f._fbId=r.id; }
+}
+async function fbDel(f){
+  if(!window.__DB||!window.__FS||!f._fbId) return;
+  const{deleteDoc,doc}=window.__FS;
+  await deleteDoc(doc(window.__DB,'fiches',f._fbId));
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  NAVIGATION                                              ║
+// ╚══════════════════════════════════════════════════════════╝
+function nav(page, el){
+  curPage = page;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  (el||document.querySelector(`[data-page="${page}"]`))?.classList.add('active');
+  const m=PAGE_META[page]||{title:page};
+  document.getElementById('tbTitle').textContent = m.title;
+  renderPage(page);
+  closeMob();
+}
+function renderPage(p){
+  const c=document.getElementById('content');
+  if(p==='dashboard')   renderDash(c);
+  else if(p==='settings') renderSettings(c);
+  else if(p==='register') renderRegister(c, null);
+  else { const m=PAGE_META[p]; if(m?.statut) renderStatusTab(c, m.statut, p); }
+}
+function refreshPage(){ renderPage(curPage); updateBadges(); }
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  BADGES (sidebar counts)                                 ║
+// ╚══════════════════════════════════════════════════════════╝
+function updateBadges(){
+  const el=id=>document.getElementById(id);
+  if(el('nb-register'))   el('nb-register').textContent  = ST.fiches.length;
+  Object.entries(STATUS_PAGES).forEach(([stat,page])=>{
+    const nbId=NB_MAP[page];
+    const cnt=ST.fiches.filter(f=>f.statut===stat).length;
+    if(el(nbId)) el(nbId).textContent=cnt;
+  });
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  SIDEBAR TOGGLE                                          ║
+// ╚══════════════════════════════════════════════════════════╝
+let sbCol=false;
+function toggleSB(){
+  sbCol=!sbCol;
+  document.getElementById('sidebar').classList.toggle('col',sbCol);
+  document.querySelector('.sb-tog').textContent=sbCol?'▶':'◀';
+}
+function openMob(){ document.getElementById('sidebar').classList.add('mob-open'); document.getElementById('sb-ovl').classList.add('open'); }
+function closeMob(){ document.getElementById('sidebar').classList.remove('mob-open'); document.getElementById('sb-ovl').classList.remove('open'); }
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  THEME                                                   ║
+// ╚══════════════════════════════════════════════════════════╝
+function applyTheme(t){
+  document.body.className=t; ST.theme=t; persist();
+  document.querySelectorAll('.th-btn').forEach(b=>b.classList.toggle('active',b.dataset.t===t));
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  BADGE HTML                                              ║
+// ╚══════════════════════════════════════════════════════════╝
+function bdg(name){
+  const s=ST.statuts.find(x=>x.name===name);
+  const c=s?s.color:'#888';
+  return `<span class="badge" style="background:${c}22;color:${c};border-color:${c}44">${name}${name===ST.lockStatut?' 🔒':''}</span>`;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  QUICK STATUS SELECT (inline in table)                   ║
+// ╚══════════════════════════════════════════════════════════╝
+function buildQS(fiche){
+  const s=ST.statuts.find(x=>x.name===fiche.statut);
+  const c=s?s.color:'#888';
+  const opts=ST.statuts.map(st=>`<option value="${st.name}"${st.name===fiche.statut?' selected':''}>${st.name}</option>`).join('');
+  return `<div class="qs-wrap">
+    <select class="qs-sel" id="qs-${fiche.id}"
+      style="background:${c}22;color:${c};border-color:${c}44"
+      onchange="quickStatus(${fiche.id},this)"
+      onclick="event.stopPropagation()">
+      ${opts}
+    </select>
+  </div>`;
+}
+
+async function quickStatus(id, sel){
+  const f=ST.fiches.find(x=>x.id===id);
+  if(!f) return;
+  const newStat=sel.value;
+  // lock check on current statut
+  if(f.statut===ST.lockStatut){
+    sel.value=f.statut; // revert display
+    unlockCB=()=>doQuickStatus(id,newStat);
+    document.getElementById('lockLbl').textContent=ST.lockStatut;
+    document.getElementById('unlockPwd').value='';
+    document.getElementById('unlockErr').style.display='none';
+    document.getElementById('pwdOvl').classList.add('open');
+    return;
+  }
+  doQuickStatus(id,newStat);
+}
+
+async function doQuickStatus(id,newStat){
+  const f=ST.fiches.find(x=>x.id===id);
+  if(!f) return;
+  f.statut=newStat;
+  f.savedAt=new Date().toISOString();
+  await fbSave(f);
+  persist();
+  // Animate row out if in status tab (not register)
+  if(curPage!=='register' && curPage!=='dashboard'){
+    const row=document.querySelector(`tr[data-id="${id}"]`);
+    if(row){ row.classList.add('slide-out'); setTimeout(()=>{ refreshPage(); updateBadges(); },380); return; }
+  }
+  refreshPage(); updateBadges();
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  PARCS VALIDATION                                        ║
+// ╚══════════════════════════════════════════════════════════╝
+function valParc(inp){
+  const v=inp.value.trim();
+  const ok=/^\d+$/.test(v)||v==='Non'||v==='';
+  document.getElementById('fParcErr').style.display=ok?'none':'block';
+  inp.style.borderColor=ok?'':'var(--red)';
+}
+function colorStat(sel){
+  const s=ST.statuts.find(x=>x.name===sel.value);
+  sel.style.borderLeftColor=s?s.color:'';
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  DASHBOARD                                               ║
+// ╚══════════════════════════════════════════════════════════╝
+function renderDash(c){
+  const fs=ST.fiches;
+  const tm=today(), mon=tm.slice(0,7);
+  const byS=cntBy(fs,'statut');
+  const kpis=[
+    {l:'Total Fiches',      v:fs.length,                                         cls:''},
+    {l:'En Cours',          v:fs.filter(f=>f.statut==='En Cours').length,        cls:'kb'},
+    {l:'Att. de Travail',   v:fs.filter(f=>f.statut==='En Attente de Travail').length, cls:'ky'},
+    {l:'Att. d\'Arrivée',   v:fs.filter(f=>f.statut==='En Attente d\'Arrivée').length, cls:'kp'},
+    {l:'Att. de Pièces',    v:fs.filter(f=>f.statut==='En Attente de Pièces').length,  cls:'kt'},
+    {l:'Annulées',          v:fs.filter(f=>f.statut==='Annulé').length,          cls:'kr'},
+    {l:'Hors Parc',         v:fs.filter(f=>f.statut==='Mis Hors Parc').length,   cls:''},
+    {l:'Terminées',         v:fs.filter(f=>f.statut==='Terminé').length,         cls:'kg'},
+    {l:"Aujourd'hui",       v:fs.filter(f=>f.date===tm).length,                  cls:''},
+    {l:'Ce Mois',           v:fs.filter(f=>f.date?.startsWith(mon)).length,      cls:'kb'},
+    {l:'Camions Distincts', v:new Set(fs.map(f=>f.parc)).size,                   cls:'kg'},
+    {l:'Équipes Actives',   v:new Set(fs.filter(f=>f.statut==='En Cours').map(f=>f.equipe)).size, cls:''},
+  ];
+  const topParc=Object.entries(cntBy(fs,'parc')).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  c.innerHTML=`
+  <div class="g4" style="margin-bottom:12px">
+    ${kpis.map(k=>`<div class="kpi ${k.cls}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('')}
+  </div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-title">Répartition par Statut</div>
+      <div class="donut-w">
+        <div class="donut-cw"><canvas id="dCanvas" width="120" height="120"></canvas>
+          <div class="donut-center"><div class="donut-num">${fs.length}</div><div class="donut-lbl">Total</div></div>
+        </div>
+        <div class="leg-w" id="dLeg"></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">Par Type de Panne</div>${buildBar(cntBy(fs,'type'))}</div>
+  </div>
+  <div class="g3" style="margin-bottom:12px">
+    <div class="card"><div class="card-title">Par Équipe</div>${buildBar(cntBy(fs,'equipe'))}</div>
+    <div class="card"><div class="card-title">Top Camions</div>${buildBar(Object.fromEntries(topParc))}</div>
+    <div class="card"><div class="card-title">Activité Récente</div>
+      <div class="act-list">${fs.slice(0,5).map((f,i)=>`
+        <div class="act-item">
+          <div class="act-dot" style="background:${BC[i%BC.length]}"></div>
+          <div><div class="act-txt"><b>${fmtId(f.id)}</b> — ${f.parc} · ${f.motif}</div>
+          <div class="act-time">${f.date} · ${bdg(f.statut)}</div></div>
+        </div>`).join('')||'<div class="no-data">Aucune activité.</div>'}
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Dernières Fiches</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>N° Fiche</th><th>Date</th><th>Nr Parc</th><th>OT</th><th>Motif</th><th>Type</th><th>Équipe</th><th>Statut</th></tr></thead>
+        <tbody>${fs.slice(0,10).map(f=>`<tr>
+          <td class="cm">${fmtId(f.id)}</td><td>${f.date}</td>
+          <td style="font-weight:600">${f.parc}</td>
+          <td class="csm">${f.ot}</td>
+          <td>${f.motif}</td><td>${f.type}</td><td>${f.equipe}</td>
+          <td>${bdg(f.statut)}</td>
+        </tr>`).join('')||'<tr><td colspan="8" class="no-data">Aucune fiche.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+  drawDonut();
+}
+
+function buildBar(counts){
+  const entries=Object.entries(counts);
+  if(!entries.length) return '<div class="no-data">Aucune donnée.</div>';
+  const max=Math.max(...Object.values(counts),1);
+  return `<div class="bar-chart">${entries.map(([k,v],i)=>`
+    <div class="bar-row">
+      <div class="bar-lbl" title="${k}">${k}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/max*100)}%;background:${BC[i%BC.length]}">${v>2?v:''}</div></div>
+      <div class="bar-cnt">${v}</div>
+    </div>`).join('')}</div>`;
+}
+
+function drawDonut(){
+  const canvas=document.getElementById('dCanvas'); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,120,120);
+  const total=ST.fiches.length;
+  const byS=cntBy(ST.fiches,'statut');
+  const cs=getComputedStyle(document.body);
+  if(!total){
+    ctx.beginPath();ctx.arc(60,60,50,0,Math.PI*2);ctx.fillStyle=cs.getPropertyValue('--bg3').trim();ctx.fill();
+  } else {
+    let a=-Math.PI/2;
+    ST.statuts.forEach(s=>{
+      const cnt=byS[s.name]||0; if(!cnt) return;
+      const sl=(cnt/total)*Math.PI*2;
+      ctx.beginPath();ctx.moveTo(60,60);ctx.arc(60,60,52,a,a+sl);ctx.closePath();
+      ctx.fillStyle=s.color;ctx.fill();a+=sl;
+    });
+    ctx.beginPath();ctx.arc(60,60,30,0,Math.PI*2);
+    ctx.fillStyle=cs.getPropertyValue('--card').trim()||'#131929';ctx.fill();
+  }
+  const leg=document.getElementById('dLeg');
+  if(leg) leg.innerHTML=ST.statuts.map(s=>`
+    <div class="leg-i"><div class="leg-d" style="background:${s.color}"></div>${s.name} (${byS[s.name]||0})</div>`).join('');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  REGISTER (all fiches)                                   ║
+// ╚══════════════════════════════════════════════════════════╝
+function renderRegister(c, filterStatut){
+  if(!c) c=document.getElementById('content');
+  const isStatusTab = filterStatut !== null && filterStatut !== undefined;
+
+  c.innerHTML=`
+  <div class="toolbar">
+    <button class="btn bp" onclick="openFicheM()">＋ Nouvelle Fiche</button>
+    <input class="inp" style="width:200px" id="rs" placeholder="🔍 Rechercher..."
+      value="${isStatusTab?(tabSearch[filterStatut]||''):(regSearch||'')}"
+      oninput="${isStatusTab?`tabSearch['${filterStatut}']=this.value;renderStatusTab(document.getElementById('content'),'${filterStatut}','${curPage}')`:'regSearch=this.value;renderRegTable()'}">
+    ${!isStatusTab?`
+    <select class="inp inp-sel" id="rfStat" onchange="regF.statut=this.value;renderRegTable()">
+      <option value="">— Tous statuts —</option>
+      ${ST.statuts.map(s=>`<option value="${s.name}"${regF.statut===s.name?' selected':''}>${s.name}</option>`).join('')}
+    </select>`:''} 
+    <select class="inp inp-sel" id="${isStatusTab?'tsType':'rfType'}" onchange="${isStatusTab?`tabF['${filterStatut}_type']=this.value;renderStatusTab(document.getElementById('content'),'${filterStatut}','${curPage}')`:'regF.type=this.value;renderRegTable()'}">
+      <option value="">— Tous types —</option>
+      ${ST.types.map(t=>`<option value="${t}"${(isStatusTab?tabF[filterStatut+'_type']:regF.type)===t?' selected':''}>${t}</option>`).join('')}
+    </select>
+    <select class="inp inp-sel" id="${isStatusTab?'tsEq':'rfEq'}" onchange="${isStatusTab?`tabF['${filterStatut+'_eq'}']=this.value;renderStatusTab(document.getElementById('content'),'${filterStatut}','${curPage}')`:'regF.equipe=this.value;renderRegTable()'}">
+      <option value="">— Toutes équipes —</option>
+      ${ST.equipes.map(e=>`<option value="${e}"${(isStatusTab?tabF[filterStatut+'_eq']:regF.equipe)===e?' selected':''}>${e}</option>`).join('')}
+    </select>
+    <span style="margin-left:auto;font-size:11px;color:var(--text2)" id="rcnt"></span>
+  </div>
+  <div class="tbl-w" style="max-height:calc(100vh - 195px)">
+    <table>
+      <thead><tr>
+        <th>N° Fiche</th><th>Date</th><th>Nr Parc</th><th>Remorque</th>
+        <th>OT</th><th>Motif</th><th>Type</th><th>Équipe</th><th>Statut</th><th>Actions</th>
+      </tr></thead>
+      <tbody id="rtbody"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:6px;font-size:10px;color:var(--text2)">💡 Clic = Voir · Double clic = Modifier · Menu statut = Changer le statut directement</div>`;
+
+  if(isStatusTab) renderStatusRows(filterStatut);
+  else renderRegTable();
+}
+
+function getRegFiltered(){
+  const s=regSearch.toLowerCase();
+  return ST.fiches.filter(f=>{
+    const txt=`${f.id} ${f.parc} ${f.ot} ${f.motif} ${f.type} ${f.equipe} ${f.statut} ${f.remorque||''}`.toLowerCase();
+    return txt.includes(s)&&(!regF.statut||f.statut===regF.statut)&&(!regF.type||f.type===regF.type)&&(!regF.equipe||f.equipe===regF.equipe);
+  });
+}
+
+function renderRegTable(){
+  const list=getRegFiltered();
+  const el=document.getElementById('rtbody');
+  const cnt=document.getElementById('rcnt');
+  if(cnt) cnt.textContent=`${list.length} fiche(s)`;
+  if(!el) return;
+  el.innerHTML=list.length?list.map(f=>rowHtml(f)):['<tr><td colspan="10" class="no-data">Aucune fiche trouvée.</td></tr>'].join('');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  STATUS TAB                                              ║
+// ╚══════════════════════════════════════════════════════════╝
+function renderStatusTab(c, statut, pageId){
+  if(!c) c=document.getElementById('content');
+  renderRegister(c, statut);
+}
+
+function renderStatusRows(statut){
+  const ts=tabSearch[statut]||'';
+  const ttype=tabF[statut+'_type']||'';
+  const teq=tabF[statut+'_eq']||'';
+  const list=ST.fiches.filter(f=>{
+    const txt=`${f.id} ${f.parc} ${f.ot} ${f.motif} ${f.type} ${f.equipe} ${f.remorque||''}`.toLowerCase();
+    return f.statut===statut && txt.includes(ts.toLowerCase())
+      &&(!ttype||f.type===ttype)&&(!teq||f.equipe===teq);
+  });
+  const el=document.getElementById('rtbody');
+  const cnt=document.getElementById('rcnt');
+  if(cnt) cnt.textContent=`${list.length} fiche(s)`;
+  if(!el) return;
+  el.innerHTML=list.length?list.map(f=>rowHtml(f)):['<tr><td colspan="10" class="no-data">Aucune fiche avec ce statut.</td></tr>'].join('');
+}
+
+function rowHtml(f){
+  const locked=f.statut===ST.lockStatut;
+  return `<tr data-id="${f.id}" style="cursor:pointer;${locked?'opacity:.85':''}"
+    onclick="handleClick(${f.id},event)" ondblclick="handleDbl(${f.id})">
+    <td class="cm">${fmtId(f.id)}</td>
+    <td>${f.date}</td>
+    <td style="font-weight:700">${f.parc}</td>
+    <td>${f.remorque||'—'}</td>
+    <td class="csm">${f.ot}</td>
+    <td>${f.motif}</td><td>${f.type}</td><td>${f.equipe}</td>
+    <td>${buildQS(f)}</td>
+    <td onclick="event.stopPropagation()" style="white-space:nowrap">
+      <button class="btn bg bs" title="Voir" onclick="viewFiche(${f.id})">👁</button>
+      <button class="btn bg bs" title="Modifier" onclick="editFiche(${f.id})" style="margin:0 2px">✏️</button>
+      <button class="btn bd bs" title="Supprimer" onclick="delFiche(${f.id})">🗑</button>
+      <button class="btn bi bs" title="PDF" onclick="printFiche(${f.id})" style="margin-left:2px">📄</button>
+    </td>
+  </tr>`;
+}
+
+function handleClick(id,e){
+  if(clickTm){clearTimeout(clickTm);clickTm=null;return;}
+  clickTm=setTimeout(()=>{clickTm=null;viewFiche(id);},240);
+}
+function handleDbl(id){if(clickTm){clearTimeout(clickTm);clickTm=null;}editFiche(id);}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  VIEW MODAL                                              ║
+// ╚══════════════════════════════════════════════════════════╝
+function viewFiche(id){
+  const f=ST.fiches.find(x=>x.id===id); if(!f) return;
+  const locked=f.statut===ST.lockStatut;
+  document.getElementById('vTitle').textContent=`FICHE ${fmtId(f.id)}`;
+  document.getElementById('vBody').innerHTML=`
+    ${locked?`<div class="lock-banner">🔒 Fiche verrouillée — statut <b>${ST.lockStatut}</b>. Mot de passe requis pour modifier.</div>`:''}
+    <div style="text-align:center;margin-bottom:12px">
+      <span class="fnr" style="display:inline-block;width:auto;padding:5px 22px">${fmtId(f.id)}</span>
+    </div>
+    <div class="vgrid" style="margin-bottom:12px">
+      ${[['Date de Début',f.date],['Nr Parc',f.parc],['Nr Remorque',f.remorque||'—'],['Nr Ordre de Travail',f.ot],
+         ['Motif d\'Entrée',f.motif],['Type de Panne',f.type],['Équipe',f.equipe],['Statut',bdg(f.statut)]]
+        .map(([l,v])=>`<div class="vf"><div class="vf-lbl">${l}</div><div class="vf-val">${v}</div></div>`).join('')}
+    </div>
+    <div class="vtxt" style="margin-bottom:8px">
+      <div class="vtxt-lbl">Diagnostique</div>
+      <div class="vtxt-c">${f.diag||'<span style="color:var(--text2)">—</span>'}</div>
+    </div>
+    <div class="vtxt">
+      <div class="vtxt-lbl">Intervention</div>
+      <div class="vtxt-c">${f.inter||'<span style="color:var(--text2)">—</span>'}</div>
+    </div>`;
+  document.getElementById('vFt').innerHTML=`
+    <button class="btn bg" onclick="closeViewM()">Fermer</button>
+    <button class="btn bi" onclick="closeViewM();printFiche(${f.id})">📄 PDF</button>
+    <button class="btn bp" onclick="closeViewM();editFiche(${f.id})">✏️ Modifier</button>`;
+  document.getElementById('viewOvl').classList.add('open');
+}
+function closeViewM(){ document.getElementById('viewOvl').classList.remove('open'); }
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  FICHE MODAL (add/edit)                                  ║
+// ╚══════════════════════════════════════════════════════════╝
+function openFicheM(id=null){
+  editId=id;
+  // populate selects
+  ['fMotif','fType','fEquipe'].forEach((eid,i)=>{
+    const arrs=[ST.motifs,ST.types,ST.equipes];
+    document.getElementById(eid).innerHTML=arrs[i].map(v=>`<option value="${v}">${v}</option>`).join('');
+  });
+  document.getElementById('fStatut').innerHTML=ST.statuts.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+
+  const f=id?ST.fiches.find(x=>x.id===id):null;
+  document.getElementById('mTitle').textContent=id?'MODIFIER FICHE':'NOUVELLE FICHE';
+  document.getElementById('fnrBox').textContent=id?fmtId(id):fmtId(ST.nextId);
+  document.getElementById('fDate').value=f?f.date:today();
+  document.getElementById('fParc').value=f?f.parc:'';
+  document.getElementById('fRem').value=f?(f.remorque||''):'';
+  document.getElementById('fOT').value=f?f.ot:'';
+  document.getElementById('fMotif').value=f?f.motif:(ST.motifs[0]||'');
+  document.getElementById('fType').value=f?f.type:(ST.types[0]||'');
+  document.getElementById('fEquipe').value=f?f.equipe:(ST.equipes[0]||'');
+  document.getElementById('fStatut').value=f?f.statut:(ST.statuts[0]?.name||'');
+  document.getElementById('fDiag').value=f?(f.diag||''):'';
+  document.getElementById('fInter').value=f?(f.inter||''):'';
+  document.getElementById('fParcErr').style.display='none';
+  colorStat(document.getElementById('fStatut'));
+  document.getElementById('ficheOvl').classList.add('open');
+}
+function closeFicheM(){ document.getElementById('ficheOvl').classList.remove('open'); editId=null; }
+
+async function saveFiche(){
+  const date=document.getElementById('fDate').value;
+  const parc=document.getElementById('fParc').value.trim();
+  const ot=document.getElementById('fOT').value.trim();
+  if(!date||!parc||!ot){alert('Champs obligatoires : Date, Nr Parc, Nr OT');return;}
+  if(!/^\d+$/.test(parc)&&parc!=='Non'){alert('Nr Parc : chiffres ou le mot "Non" uniquement.');return;}
+  const data={
+    date,parc,ot,
+    remorque:document.getElementById('fRem').value.trim(),
+    motif:document.getElementById('fMotif').value,
+    type:document.getElementById('fType').value,
+    equipe:document.getElementById('fEquipe').value,
+    statut:document.getElementById('fStatut').value,
+    diag:document.getElementById('fDiag').value.trim(),
+    inter:document.getElementById('fInter').value.trim(),
+    savedAt:new Date().toISOString(),
+  };
+  if(editId){
+    const idx=ST.fiches.findIndex(f=>f.id===editId);
+    ST.fiches[idx]={...ST.fiches[idx],...data};
+    await fbSave(ST.fiches[idx]);
+  } else {
+    data.id=ST.nextId++;
+    ST.fiches.unshift(data);
+    await fbSave(data);
+  }
+  persist(); closeFicheM(); refreshPage(); updateBadges();
+}
+
+function editFiche(id){
+  const f=ST.fiches.find(x=>x.id===id); if(!f) return;
+  if(f.statut===ST.lockStatut){
+    unlockCB=()=>openFicheM(id);
+    document.getElementById('lockLbl').textContent=ST.lockStatut;
+    document.getElementById('unlockPwd').value='';
+    document.getElementById('unlockErr').style.display='none';
+    document.getElementById('pwdOvl').classList.add('open');
+    return;
+  }
+  openFicheM(id);
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  DELETE                                                  ║
+// ╚══════════════════════════════════════════════════════════╝
+async function delFiche(id){
+  const f=ST.fiches.find(x=>x.id===id); if(!f) return;
+  if(f.statut===ST.lockStatut){
+    unlockCB=()=>confirmDel(id);
+    document.getElementById('lockLbl').textContent=ST.lockStatut;
+    document.getElementById('unlockPwd').value='';
+    document.getElementById('unlockErr').style.display='none';
+    document.getElementById('pwdOvl').classList.add('open');
+    return;
+  }
+  confirmDel(id);
+}
+async function confirmDel(id){
+  if(!confirm(`Supprimer ${fmtId(id)} ?`)) return;
+  const f=ST.fiches.find(x=>x.id===id);
+  await fbDel(f);
+  ST.fiches=ST.fiches.filter(x=>x.id!==id);
+  persist(); refreshPage(); updateBadges();
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  PASSWORD MODAL                                          ║
+// ╚══════════════════════════════════════════════════════════╝
+function closePwdM(){ document.getElementById('pwdOvl').classList.remove('open'); unlockCB=null; }
+function confirmUnlock(){
+  const pwd=document.getElementById('unlockPwd').value;
+  const err=document.getElementById('unlockErr');
+  if(pwd!==ST.password){
+    err.textContent='Mot de passe incorrect.'; err.style.display='block';
+    document.getElementById('unlockPwd').classList.add('flash');
+    setTimeout(()=>document.getElementById('unlockPwd').classList.remove('flash'),1400);
+    return;
+  }
+  err.style.display='none';
+  document.getElementById('pwdOvl').classList.remove('open');
+  if(unlockCB){unlockCB();unlockCB=null;}
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  PDF — DESIGN PREMIUM                                    ║
+// ╚══════════════════════════════════════════════════════════╝
+function printFiche(id){
+  const f=ST.fiches.find(x=>x.id===id); if(!f) return;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210, H=297, M=15;
+
+  // ── Background ──
+  doc.setFillColor(11,15,24); doc.rect(0,0,W,H,'F');
+
+  // ── TOP ACCENT BAR ──
+  doc.setFillColor(240,112,48); doc.rect(0,0,W,4,'F');
+
+  // ── HEADER BAND ──
+  doc.setFillColor(19,25,41); doc.rect(0,4,W,42,'F');
+  // left orange stripe
+  doc.setFillColor(240,112,48); doc.rect(0,4,4,42,'F');
+
+  // Logo text
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(32); doc.setTextColor(240,112,48);
+  doc.text('UMS', M+6, 24);
+  doc.setFontSize(13); doc.setTextColor(180,190,215);
+  doc.text('GESTION RÉPARATIONS CAMIONS', M+6, 33);
+  doc.setFontSize(9); doc.setTextColor(100,120,160);
+  doc.text(`Fiche générée le ${new Date().toLocaleDateString('fr-FR','fr')} à ${new Date().toLocaleTimeString('fr-FR')}`, M+6, 41);
+
+  // Fiche number — top right
+  const stat=ST.statuts.find(s=>s.name===f.statut);
+  const sc=stat?stat.color:'#888888';
+  const hexToRgb=h=>{const r=h.replace('#','');return[parseInt(r.slice(0,2),16),parseInt(r.slice(2,4),16),parseInt(r.slice(4,6),16)]};
+  const [sr,sg,sb]=hexToRgb(sc);
+  // status pill
+  doc.setFillColor(sr,sg,sb); doc.roundedRect(W-M-45,8,45,10,3,3,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text(f.statut, W-M-22.5, 14.5, {align:'center'});
+  // ID
+  doc.setFontSize(22); doc.setTextColor(240,112,48);
+  doc.text(fmtId(f.id), W-M, 32, {align:'right'});
+
+  // ── SEPARATOR ──
+  doc.setDrawColor(240,112,48); doc.setLineWidth(0.5); doc.line(M,47,W-M,47);
+
+  // ── INFO GRID ──
+  const fields=[
+    ['Date de Début',f.date],['Nr Parc',f.parc],
+    ['Nr Remorque',f.remorque||'—'],['Nr Ordre de Travail',f.ot],
+    ['Motif d\'Entrée',f.motif],['Type de Panne',f.type],
+    ['Équipe d\'Intervention',f.equipe],['Statut',f.statut],
+  ];
+  const cols=2, boxW=(W-M*2-8)/cols, boxH=14, startY=52;
+  fields.forEach(([lbl,val],i)=>{
+    const col=i%cols, row=Math.floor(i/cols);
+    const x=M+col*(boxW+8), y=startY+row*(boxH+4);
+    doc.setFillColor(26,34,53); doc.roundedRect(x,y,boxW,boxH,2,2,'F');
+    doc.setDrawColor(42,58,85); doc.setLineWidth(0.3); doc.roundedRect(x,y,boxW,boxH,2,2,'S');
+    // accent left bar
+    doc.setFillColor(240,112,48); doc.rect(x,y,2,boxH,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(120,143,176);
+    doc.text(lbl.toUpperCase(), x+5, y+5.5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(220,228,242);
+    doc.text(String(val), x+5, y+11);
+  });
+
+  // ── SECTION : DIAGNOSTIQUE ──
+  let y=startY+4*(boxH+4)+8;
+  doc.setFillColor(26,34,53); doc.roundedRect(M,y,W-M*2,6.5,2,2,'F');
+  doc.setFillColor(240,112,48); doc.rect(M,y,3,6.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(240,112,48);
+  doc.text('DIAGNOSTIQUE', M+6, y+4.8);
+  y+=9;
+  const diagText=f.diag||'Aucun diagnostique renseigné.';
+  const diagLines=doc.splitTextToSize(diagText,W-M*2-6);
+  const diagH=Math.max(diagLines.length*5+8,20);
+  doc.setFillColor(19,25,41); doc.roundedRect(M,y,W-M*2,diagH,2,2,'F');
+  doc.setDrawColor(42,58,85); doc.setLineWidth(0.3); doc.roundedRect(M,y,W-M*2,diagH,2,2,'S');
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(200,210,228);
+  doc.text(diagLines, M+4, y+6);
+  y+=diagH+8;
+
+  // ── SECTION : INTERVENTION ──
+  doc.setFillColor(26,34,53); doc.roundedRect(M,y,W-M*2,6.5,2,2,'F');
+  doc.setFillColor(61,156,240); doc.rect(M,y,3,6.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(61,156,240);
+  doc.text('INTERVENTION', M+6, y+4.8);
+  y+=9;
+  const interText=f.inter||'Aucune intervention renseignée.';
+  const interLines=doc.splitTextToSize(interText,W-M*2-6);
+  const interH=Math.max(interLines.length*5+8,20);
+  doc.setFillColor(19,25,41); doc.roundedRect(M,y,W-M*2,interH,2,2,'F');
+  doc.setDrawColor(42,58,85); doc.setLineWidth(0.3); doc.roundedRect(M,y,W-M*2,interH,2,2,'S');
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(200,210,228);
+  doc.text(interLines, M+4, y+6);
+  y+=interH+12;
+
+  // ── SIGNATURE ZONE ──
+  if(y<H-50){
+    doc.setDrawColor(42,58,85); doc.setLineWidth(0.3);
+    const sw=60;
+    [['Responsable Équipe',M],[`Validé par`,W-M-sw]].forEach(([lbl,x])=>{
+      doc.line(x,y+14,x+sw,y+14);
+      doc.setFontSize(7); doc.setTextColor(100,120,160);
+      doc.text(lbl, x+sw/2, y+18, {align:'center'});
+    });
+  }
+
+  // ── FOOTER ──
+  doc.setFillColor(19,25,41); doc.rect(0,H-10,W,10,'F');
+  doc.setFillColor(240,112,48); doc.rect(0,H-10,W,1,'F');
+  doc.setFontSize(7); doc.setTextColor(100,120,160);
+  doc.text(`${fmtId(f.id)} — ${f.parc} — ${f.equipe}`, M, H-4);
+  doc.text('UMS — Gestion Réparations Camions', W-M, H-4, {align:'right'});
+
+  doc.save(`Fiche_${fmtId(f.id)}_Parc${f.parc}.pdf`);
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  SETTINGS                                                ║
+// ╚══════════════════════════════════════════════════════════╝
+function renderSettings(c){
+  if(!c) c=document.getElementById('content');
+  c.innerHTML=`<div class="sg">
+    <div class="sc"><h3>Statuts & Couleurs</h3>
+      <div class="st-list" id="stList">${renderStatList()}</div>
+      <div class="add-row">
+        <input class="finp" id="nStatNm" placeholder="Nouveau statut...">
+        <input type="color" id="nStatCol" value="#f07030" style="width:34px;height:34px;border:none;background:none;cursor:pointer;border-radius:8px;padding:0">
+        <button class="btn bp" style="padding:5px 10px" onclick="addStat()">+</button>
+      </div>
+    </div>
+    <div class="sc"><h3>Types de Panne</h3>
+      <div class="tag-w" id="typeW">${renderTags(ST.types,'rmType')}</div>
+      <div class="add-row">
+        <input class="finp" id="nType" placeholder="Nouveau type..." onkeydown="if(event.key==='Enter')addType()">
+        <button class="btn bp" style="padding:5px 10px" onclick="addType()">+</button>
+      </div>
+    </div>
+    <div class="sc"><h3>Motifs d'Entrée</h3>
+      <div class="tag-w" id="motifW">${renderTags(ST.motifs,'rmMotif')}</div>
+      <div class="add-row">
+        <input class="finp" id="nMotif" placeholder="Nouveau motif..." onkeydown="if(event.key==='Enter')addMotif()">
+        <button class="btn bp" style="padding:5px 10px" onclick="addMotif()">+</button>
+      </div>
+    </div>
+    <div class="sc"><h3>Équipes d'Intervention</h3>
+      <div class="tag-w" id="equipeW">${renderTags(ST.equipes,'rmEquipe')}</div>
+      <div class="add-row">
+        <input class="finp" id="nEquipe" placeholder="Nouvelle équipe..." onkeydown="if(event.key==='Enter')addEquipe()">
+        <button class="btn bp" style="padding:5px 10px" onclick="addEquipe()">+</button>
+      </div>
+    </div>
+    <div class="sc"><h3>Thèmes</h3>
+      <div class="th-grid">
+        ${[['','🌑 Forge'],['th-steel','🔵 Acier'],['th-desert','🟠 Désert'],['th-arctic','☀️ Arctique'],['th-jungle','🟢 Jungle'],['th-crimson','🔴 Braise'],['th-slate','💜 Slate']]
+          .map(([id,l])=>`<button class="th-btn${ST.theme===id?' active':''}" data-t="${id}" onclick="applyTheme('${id}')">${l}</button>`).join('')}
+      </div>
+    </div>
+    <div class="sc"><h3>🔒 Sécurité & Données</h3>
+      <div class="pwd-info">Le statut sélectionné verrouille les fiches. Mot de passe requis pour modifier ou supprimer.</div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="flbl">Statut Verrouillant</label>
+        <select class="finp" id="lockSel" onchange="ST.lockStatut=this.value;persist()">
+          <option value="">— Aucun —</option>
+          ${ST.statuts.map(s=>`<option value="${s.name}"${ST.lockStatut===s.name?' selected':''}>${s.name}</option>`).join('')}
+        </select>
+      </div>
+      ${['Mot de passe actuel','Nouveau mot de passe','Confirmer'].map((l,i)=>`
+        <div class="fg" style="margin-bottom:8px">
+          <label class="flbl">${l}</label>
+          <input type="password" class="finp" id="p${i}" placeholder="••••••••">
+        </div>`).join('')}
+      <button class="btn bp" onclick="changePwd()" style="margin-bottom:6px">Changer le Mot de Passe</button>
+      <div id="pwdMsg" style="font-size:11px;margin-bottom:10px"></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="btn bg" onclick="exportData()">📥 Export JSON</button>
+        <button class="btn bg" onclick="document.getElementById('impF').click()">📤 Import JSON</button>
+        <button class="btn bd" onclick="clearAll()">🗑️ Réinitialiser</button>
+      </div>
+      <input type="file" id="impF" accept=".json" style="display:none" onchange="importData(event)">
+      <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+      <div style="font-size:10px;color:var(--text2);line-height:1.6">
+        <b style="color:var(--accent)">🌐 Déploiement Multi-utilisateur</b><br>
+        1. Créez un projet sur console.firebase.google.com<br>
+        2. Activez Firestore Database (mode test)<br>
+        3. Copiez votre config dans le &lt;script type="module"&gt; en haut du fichier<br>
+        4. Déposez sur GitHub → connectez Netlify (auto-deploy)
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderStatList(){
+  return ST.statuts.map((s,i)=>`
+    <div class="st-row">
+      <div class="cdot" style="background:${s.color}"></div>
+      <span class="sname">${s.name}</span>
+      <input type="color" value="${s.color}" onchange="ST.statuts[${i}].color=this.value;persist()">
+      <button class="btn bd" style="padding:2px 7px;font-size:10px" onclick="rmStat(${i})">✕</button>
+    </div>`).join('');
+}
+function renderTags(arr,fn){
+  return arr.map((v,i)=>`<span class="tag">${v}<span class="tag-x" onclick="${fn}(${i})">✕</span></span>`).join('');
+}
+
+function addStat(){ const n=document.getElementById('nStatNm').value.trim(),c=document.getElementById('nStatCol').value; if(!n)return; ST.statuts.push({name:n,color:c}); document.getElementById('nStatNm').value=''; persist(); document.getElementById('stList').innerHTML=renderStatList(); }
+function rmStat(i){ ST.statuts.splice(i,1); persist(); document.getElementById('stList').innerHTML=renderStatList(); }
+function addType(){ const v=document.getElementById('nType').value.trim(); if(v){ST.types.push(v);document.getElementById('nType').value='';persist();document.getElementById('typeW').innerHTML=renderTags(ST.types,'rmType');} }
+function rmType(i){ ST.types.splice(i,1);persist();document.getElementById('typeW').innerHTML=renderTags(ST.types,'rmType'); }
+function addMotif(){ const v=document.getElementById('nMotif').value.trim(); if(v){ST.motifs.push(v);document.getElementById('nMotif').value='';persist();document.getElementById('motifW').innerHTML=renderTags(ST.motifs,'rmMotif');} }
+function rmMotif(i){ ST.motifs.splice(i,1);persist();document.getElementById('motifW').innerHTML=renderTags(ST.motifs,'rmMotif'); }
+function addEquipe(){ const v=document.getElementById('nEquipe').value.trim(); if(v){ST.equipes.push(v);document.getElementById('nEquipe').value='';persist();document.getElementById('equipeW').innerHTML=renderTags(ST.equipes,'rmEquipe');} }
+function rmEquipe(i){ ST.equipes.splice(i,1);persist();document.getElementById('equipeW').innerHTML=renderTags(ST.equipes,'rmEquipe'); }
+
+function changePwd(){
+  const[o,n,c]=[0,1,2].map(i=>document.getElementById('p'+i).value);
+  const msg=document.getElementById('pwdMsg');
+  if(o!==ST.password){msg.style.color='var(--red)';msg.textContent='❌ Mot de passe actuel incorrect.';return;}
+  if(n.length<4){msg.style.color='var(--red)';msg.textContent='❌ Minimum 4 caractères.';return;}
+  if(n!==c){msg.style.color='var(--red)';msg.textContent='❌ Mots de passe différents.';return;}
+  ST.password=n;persist();msg.style.color='var(--green)';msg.textContent='✓ Mis à jour.';
+  [0,1,2].forEach(i=>document.getElementById('p'+i).value='');
+}
+function exportData(){ const b=new Blob([JSON.stringify(ST,null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ums_${today()}.json`;a.click(); }
+function importData(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.fiches&&d.statuts){Object.assign(ST,d);persist();renderSettings();alert('✓ Importé.');}else alert('Format invalide.');}catch{alert('Erreur import.');}};
+  r.readAsText(f);e.target.value='';
+}
+function clearAll(){ if(!confirm('⚠️ Supprimer TOUTES les fiches ?'))return; ST.fiches=[];ST.nextId=1;persist();refreshPage();updateBadges(); }
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  INIT                                                    ║
+// ╚══════════════════════════════════════════════════════════╝
+window.addEventListener('DOMContentLoaded',()=>{
+  applyTheme(ST.theme);
+  renderDash(document.getElementById('content'));
+  updateBadges();
+  initFB();
+});
+</script>
+</body>
+</html>
